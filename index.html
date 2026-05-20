@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rockfish Weatherwear 作業工具</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;background:#f0f2f5;min-height:100vh;color:#1a1a2e;}
+  header{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);color:white;padding:20px 32px;box-shadow:0 4px 20px rgba(0,0,0,.3);display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
+  header h1{font-size:1.4rem;font-weight:700;letter-spacing:.5px;}
+  header p{font-size:.8rem;opacity:.6;margin-top:3px;}
+  .nav-tabs{display:flex;gap:0;background:rgba(255,255,255,.1);border-radius:10px;overflow:hidden;margin-left:auto;}
+  .nav-tab{padding:9px 20px;font-size:.82rem;font-weight:700;cursor:pointer;border:none;background:transparent;color:rgba(255,255,255,.7);transition:all .2s;white-space:nowrap;}
+  .nav-tab.active,.nav-tab:hover{background:rgba(255,255,255,.2);color:white;}
+  .page{display:none;max-width:960px;margin:0 auto;padding:24px 20px;}
+  .page.active{display:block;}
+  .card{background:white;border-radius:16px;padding:22px;box-shadow:0 2px 12px rgba(0,0,0,.08);margin-bottom:18px;}
+  .search-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  .input-wrap{flex:1;min-width:200px;position:relative;}
+  .input-wrap svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#94a3b8;pointer-events:none;}
+  input[type=text]{width:100%;padding:12px 14px 12px 44px;border:2px solid #e2e8f0;border-radius:10px;font-size:.95rem;outline:none;transition:border-color .2s;font-family:'Consolas','SF Mono',monospace;letter-spacing:.5px;}
+  input[type=text]:focus{border-color:#0f3460;}
+  .btn{padding:11px 18px;border:2px solid #e2e8f0;border-radius:10px;background:white;cursor:pointer;font-size:.82rem;color:#64748b;font-weight:600;transition:all .2s;white-space:nowrap;}
+  .btn:hover{border-color:#0f3460;color:#0f3460;}
+  .tab-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
+  .tab-btn{padding:6px 14px;border:2px solid #e2e8f0;border-radius:20px;background:white;font-size:.78rem;font-weight:600;cursor:pointer;transition:all .2s;color:#64748b;white-space:nowrap;}
+  .tab-btn:hover{border-color:#0f3460;color:#0f3460;}
+  .tab-btn.active{background:#0f3460;border-color:#0f3460;color:white;}
+  .tab-btn.active[onclick*="THIS"]{background:#059669;border-color:#059669;color:white;}
+  .stats-row{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
+  .stat-chip{background:white;border-radius:10px;padding:10px 14px;box-shadow:0 1px 6px rgba(0,0,0,.07);text-align:center;min-width:86px;}
+  .stat-chip .num{font-size:1.4rem;font-weight:800;color:#0f3460;}
+  .stat-chip .lbl{font-size:.68rem;color:#94a3b8;margin-top:2px;text-transform:uppercase;letter-spacing:.5px;}
+  .mode-row{display:flex;gap:10px;margin-bottom:16px;align-items:center;}
+  .mode-label{font-size:.8rem;color:#64748b;font-weight:600;}
+  .mode-btn{padding:6px 14px;border:2px solid #e2e8f0;border-radius:8px;font-size:.78rem;font-weight:600;cursor:pointer;background:white;color:#64748b;transition:all .2s;}
+  .mode-btn.active{background:#e84393;border-color:#e84393;color:white;}
+  table{width:100%;border-collapse:collapse;font-size:.83rem;}
+  thead th{background:#f8fafc;color:#64748b;font-weight:600;padding:9px 12px;text-align:left;font-size:.73rem;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e2e8f0;}
+  tbody tr{border-bottom:1px solid #f1f5f9;transition:background .15s;}
+  tbody tr:hover{background:#f8fafc;}
+  tbody tr:last-child{border-bottom:none;}
+  tbody td{padding:9px 12px;vertical-align:middle;}
+  .mono{font-family:'Consolas','SF Mono',monospace;font-size:.78rem;color:#475569;}
+  .highlight{background:#fef08a;border-radius:3px;padding:0 2px;}
+  .box-card{background:white;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,.07);overflow:hidden;margin-bottom:14px;}
+  .box-card-header{background:linear-gradient(135deg,#0f3460,#1a1a2e);color:white;padding:13px 18px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+  .box-num{font-family:'Consolas','SF Mono',monospace;font-size:.95rem;font-weight:700;letter-spacing:1px;}
+  .badge{background:rgba(255,255,255,.2);border-radius:20px;padding:3px 10px;font-size:.72rem;font-weight:600;}
+  .style-card{background:white;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,.07);margin-bottom:14px;overflow:hidden;}
+  .style-card-header{background:linear-gradient(135deg,#e84393,#c0136d);color:white;padding:12px 18px;display:flex;align-items:center;gap:14px;}
+  .style-code{font-family:'Consolas',monospace;font-size:.92rem;font-weight:700;}
+  .empty-state{text-align:center;padding:48px 20px;color:#94a3b8;}
+  .empty-state .icon{font-size:2.6rem;margin-bottom:10px;}
+  .empty-state h3{font-size:.95rem;font-weight:600;margin-bottom:5px;}
+  .empty-state p{font-size:.8rem;}
+  .section-title{font-size:.75rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
+
+  /* ── 配貨分配 ── */
+  .scan-hint{font-size:.78rem;color:#94a3b8;margin-top:10px;}
+  .assign-card{background:white;border-radius:20px;box-shadow:0 4px 24px rgba(0,0,0,.12);overflow:hidden;margin-bottom:14px;}
+  .assign-store{padding:32px 24px;text-align:center;}
+  .assign-store .store-label{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:2px;opacity:.8;margin-bottom:10px;}
+  .assign-store .store-name{font-size:3.2rem;font-weight:900;line-height:1;letter-spacing:-1px;color:white;}
+  .assign-store .store-count{font-size:.95rem;margin-top:12px;color:rgba(255,255,255,.85);font-weight:600;}
+  .stores-progress{padding:18px 22px;background:#f8fafc;border-top:1px solid #e2e8f0;}
+  .progress-title{font-size:.7rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;}
+  .store-row{display:flex;align-items:center;gap:10px;margin-bottom:9px;}
+  .store-row:last-child{margin-bottom:0;}
+  .store-row-name{font-size:.78rem;font-weight:700;width:76px;flex-shrink:0;}
+  .progress-bar-wrap{flex:1;background:#e2e8f0;border-radius:99px;height:9px;overflow:hidden;}
+  .progress-bar{height:100%;border-radius:99px;transition:width .35s ease;}
+  .store-row-nums{font-size:.75rem;font-weight:700;width:46px;text-align:right;flex-shrink:0;color:#64748b;}
+  .store-row.done .store-row-name{text-decoration:line-through;color:#94a3b8;}
+  .store-row.done .store-row-nums{color:#94a3b8;}
+  .all-done{background:linear-gradient(135deg,#059669,#047857);color:white;border-radius:20px;padding:36px 24px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.15);margin-bottom:14px;}
+  .all-done .done-icon{font-size:2.8rem;margin-bottom:10px;}
+  .all-done h2{font-size:1.5rem;font-weight:900;margin-bottom:6px;}
+  .all-done p{opacity:.85;font-size:.88rem;}
+  .not-found{background:white;border-radius:16px;padding:32px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,.07);}
+  .action-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
+  .action-btn{padding:9px 18px;border-radius:10px;font-size:.82rem;font-weight:700;cursor:pointer;border:none;transition:all .2s;}
+  .btn-undo{background:#fef3c7;color:#92400e;}
+  .btn-undo:hover{background:#fde68a;}
+  .btn-reset{background:#fee2e2;color:#991b1b;}
+  .btn-reset:hover{background:#fecaca;}
+
+  /* ── 進度總覽 ── */
+  .progress-summary-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
+  .progress-summary-header h2{font-size:1rem;font-weight:700;color:#1a1a2e;}
+  .store-filter-row{display:flex;gap:6px;flex-wrap:wrap;}
+  .store-filter-btn{padding:5px 12px;border:2px solid #e2e8f0;border-radius:20px;background:white;font-size:.75rem;font-weight:600;cursor:pointer;transition:all .2s;color:#64748b;}
+  .store-filter-btn:hover{border-color:#0f3460;color:#0f3460;}
+  .store-filter-btn.active{color:white;border-color:transparent;}
+
+  /* 總覽統計列 */
+  .overview-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:18px;}
+  .overview-chip{background:white;border-radius:12px;padding:14px 16px;box-shadow:0 1px 6px rgba(0,0,0,.07);text-align:center;border-top:4px solid;}
+  .overview-chip .oc-name{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+  .overview-chip .oc-nums{font-size:1.3rem;font-weight:900;line-height:1;}
+  .overview-chip .oc-sub{font-size:.68rem;color:#94a3b8;margin-top:4px;}
+
+  /* 進度表格 */
+  .progress-table-wrap{background:white;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,.07);overflow:hidden;}
+  .progress-table{width:100%;border-collapse:collapse;font-size:.8rem;}
+  .progress-table thead th{background:#f8fafc;color:#64748b;font-weight:600;padding:9px 12px;text-align:center;font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e2e8f0;position:sticky;top:0;}
+  .progress-table thead th:first-child{text-align:left;}
+  .progress-table tbody tr{border-bottom:1px solid #f1f5f9;transition:background .1s;}
+  .progress-table tbody tr:hover{background:#f8fafc;}
+  .progress-table tbody tr:last-child{border-bottom:none;}
+  .progress-table tbody td{padding:8px 12px;text-align:center;vertical-align:middle;}
+  .progress-table tbody td:first-child{text-align:left;}
+  .cell-fraction{font-size:.75rem;font-weight:700;}
+  .cell-done{color:#059669;}
+  .cell-partial{color:#d97706;}
+  .cell-zero{color:#cbd5e1;}
+  .cell-na{color:#e2e8f0;font-size:.7rem;}
+  .row-all-done td{background:#f0fdf4;}
+  .row-all-done td:first-child{border-left:3px solid #059669;}
+  .bc-info{display:flex;flex-direction:column;gap:1px;}
+  .bc-main{font-family:'Consolas',monospace;font-size:.75rem;color:#1a1a2e;font-weight:600;}
+  .bc-sub{font-size:.68rem;color:#94a3b8;}
+  .pill-done{display:inline-block;background:#dcfce7;color:#059669;border-radius:99px;padding:1px 7px;font-size:.65rem;font-weight:700;margin-left:4px;}
+  .pill-wip{display:inline-block;background:#fef9c3;color:#ca8a04;border-radius:99px;padding:1px 7px;font-size:.65rem;font-weight:700;margin-left:4px;}
+  .pill-over{display:inline-block;background:#fee2e2;color:#dc2626;border-radius:99px;padding:1px 7px;font-size:.65rem;font-weight:700;margin-left:4px;animation:pulse .6s ease infinite;}
+  .row-over td{background:#fff1f1;}
+  .row-over td:first-child{border-left:3px solid #dc2626;}
+
+  @media(max-width:700px){
+    header{padding:14px 16px;flex-direction:column;align-items:flex-start;gap:10px;}
+    .nav-tabs{margin-left:0;width:100%;}
+    .nav-tab{flex:1;text-align:center;padding:8px 6px;font-size:.75rem;}
+    .page{padding:12px;}
+    .card{padding:14px;}
+    .assign-store .store-name{font-size:2.4rem;}
+    thead th{display:none;}
+    tbody tr{display:block;border-bottom:2px solid #f1f5f9;padding:5px 0;}
+    tbody td{display:flex;padding:3px 10px;}
+    tbody td::before{content:attr(data-label);font-weight:600;color:#64748b;min-width:65px;font-size:.72rem;}
+    .progress-table thead th{display:table-cell;}
+    .progress-table tbody tr{display:table-row;border-bottom:1px solid #f1f5f9;padding:0;}
+    .progress-table tbody td{display:table-cell;padding:7px 8px;}
+    .progress-table tbody td::before{display:none;}
+  @keyframes pulse{0%{transform:scale(1);}50%{transform:scale(1.02);}100%{transform:scale(1);}}
+  /* ── 同步狀態列 ── */
+  .sync-bar{position:fixed;bottom:0;left:0;right:0;background:#1a1a2e;color:white;padding:6px 20px;display:flex;align-items:center;justify-content:space-between;font-size:.72rem;z-index:999;gap:12px;flex-wrap:wrap;}
+  .sync-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .sync-dot.ok{background:#059669;}
+  .sync-dot.syncing{background:#f59e0b;animation:pulse .6s ease infinite;}
+  .sync-dot.err{background:#dc2626;}
+  .sync-info{display:flex;align-items:center;gap:7px;}
+  .sync-reset-btn{padding:3px 10px;border:1px solid rgba(255,255,255,.3);border-radius:6px;background:transparent;color:rgba(255,255,255,.7);cursor:pointer;font-size:.7rem;}
+  .sync-reset-btn:hover{background:rgba(255,255,255,.1);}
+  /* ── 勾箱清單 ── */
+  .cl-wrap{background:white;border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,.08);overflow:hidden;}
+  .cl-header{padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f1f5f9;flex-wrap:wrap;gap:10px;}
+  .cl-header h3{font-size:.88rem;font-weight:700;color:#1a1a2e;}
+  .cl-counts{display:flex;gap:10px;}
+  .cl-count{font-size:.75rem;font-weight:700;padding:3px 12px;border-radius:20px;}
+  .cl-count.found{background:#dcfce7;color:#059669;}
+  .cl-count.missing{background:#fee2e2;color:#dc2626;}
+  .cl-count.all{background:#f1f5f9;color:#475569;}
+  .cl-reset{font-size:.75rem;font-weight:600;color:#94a3b8;cursor:pointer;padding:4px 10px;border:1px solid #e2e8f0;border-radius:8px;background:white;}
+  .cl-reset:hover{color:#dc2626;border-color:#dc2626;}
+  .cl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0;}
+  .cl-item{display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid #f8fafc;border-right:1px solid #f8fafc;cursor:pointer;transition:background .12s;user-select:none;}
+  .cl-item:hover{background:#f8fafc;}
+  .cl-item.found{background:#f0fdf4;}
+  .cl-item.found:hover{background:#dcfce7;}
+  .cl-checkbox{width:20px;height:20px;border-radius:6px;border:2px solid #d1d5db;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+  .cl-item.found .cl-checkbox{background:#059669;border-color:#059669;color:white;}
+  .cl-box-num{font-family:'Consolas','SF Mono',monospace;font-size:.78rem;font-weight:700;color:#1a1a2e;}
+  .cl-item.found .cl-box-num{color:#059669;}
+  .cl-box-sub{font-size:.65rem;color:#94a3b8;margin-top:1px;}
+  .cl-divider{grid-column:1/-1;padding:8px 16px;background:#fafafa;border-bottom:1px solid #f1f5f9;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#94a3b8;}
+  .cl-divider.missing-div{background:#fff5f5;color:#dc2626;}
+    .overview-stats{grid-template-columns:repeat(3,1fr);}
+  }
+
+  /* ── 本次箱號查詢 ── */
+  .bn-layout{display:grid;grid-template-columns:1fr 260px;gap:16px;align-items:start;}
+  .bn-input-row{display:flex;gap:10px;align-items:center;margin-bottom:14px;}
+  .bn-input-wrap{flex:1;position:relative;}
+  .bn-input-wrap svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#94a3b8;pointer-events:none;}
+  #bnBoxInput{width:100%;padding:12px 14px 12px 44px;border:2px solid #0f3460;border-radius:10px;font-size:.95rem;outline:none;font-family:'Consolas','SF Mono',monospace;letter-spacing:.5px;background:white;color:#1a1a2e;}
+  #bnBoxInput:focus{border-color:#7c3aed;}
+  .bn-banner{border-radius:8px;padding:9px 16px;font-size:.82rem;font-family:'Consolas','SF Mono',monospace;text-align:center;display:none;margin-bottom:14px;font-weight:600;}
+  .bn-banner.hit{background:#dcfce7;border:1px solid #86efac;color:#059669;}
+  .bn-banner.miss{background:#fee2e2;border:1px solid #fca5a5;color:#dc2626;}
+  .bn-legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px;}
+  .bn-leg{display:flex;align-items:center;gap:6px;font-size:.72rem;color:#94a3b8;}
+  .bn-leg-dot{width:9px;height:9px;border-radius:50%;}
+  .bn-table-wrap{background:white;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,.07);overflow:hidden;}
+  .bn-table{width:100%;border-collapse:collapse;}
+  .bn-table thead th{background:#f8fafc;color:#64748b;font-size:.7rem;font-family:'Consolas','SF Mono',monospace;text-transform:uppercase;letter-spacing:.07em;padding:9px 12px;text-align:left;border-bottom:1px solid #e2e8f0;white-space:nowrap;}
+  .bn-table tbody tr{border-bottom:1px solid #f1f5f9;transition:background .12s;}
+  .bn-table tbody tr:last-child{border-bottom:none;}
+  .bn-table tbody tr:hover{filter:brightness(.97);}
+  .bn-table tbody tr.row-g{background:#f0fdf4;}
+  .bn-table tbody tr.row-y{background:#fefce8;}
+  .bn-table tbody tr.row-r{background:#fff1f1;}
+  .bn-table tbody tr.row-na{opacity:.35;}
+  .bn-table td{padding:9px 12px;font-size:.82rem;vertical-align:middle;}
+  .td-n{font-family:'Consolas',monospace;font-weight:700;font-size:.9rem;width:36px;}
+  .td-n.g{color:#059669;} .td-n.y{color:#d97706;} .td-n.r{color:#dc2626;} .td-n.na{color:#cbd5e1;}
+  .bn-bc{font-family:'Consolas',monospace;font-size:.73rem;}
+  .bn-desc{font-size:.72rem;color:#64748b;}
+  .bn-boxes{font-family:'Consolas',monospace;font-size:.71rem;color:#7c3aed;}
+  /* side */
+  .bn-side{display:flex;flex-direction:column;gap:12px;}
+  .bn-side-card{background:white;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,.07);padding:14px;}
+  .bn-stat-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:.82rem;}
+  .bn-stat-row:last-child{border-bottom:none;}
+  .bn-stat-lbl{color:#64748b;}
+  .bn-stat-val{font-family:'Consolas',monospace;font-weight:700;}
+  .bn-stat-val.g{color:#059669;} .bn-stat-val.r{color:#dc2626;}
+  .bn-side-title{font-size:.68rem;font-family:'Consolas',monospace;text-transform:uppercase;letter-spacing:.1em;color:#94a3b8;margin-bottom:10px;display:flex;align-items:center;gap:7px;}
+  .bn-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+  .bn-box-grid{display:flex;flex-wrap:wrap;gap:5px;}
+  .bn-box-tag{font-family:'Consolas',monospace;font-size:.68rem;font-weight:600;padding:4px 8px;border-radius:6px;border:1px solid transparent;cursor:pointer;transition:transform .1s;line-height:1.4;text-align:center;}
+  .bn-box-tag:hover{transform:scale(1.07);}
+  .bn-box-tag.found{background:rgba(5,150,105,.1);border-color:rgba(5,150,105,.35);color:#059669;}
+  .bn-box-tag.found:hover{background:rgba(5,150,105,.2);}
+  .bn-box-tag.missing{background:rgba(220,38,38,.07);border-color:rgba(220,38,38,.2);color:#dc2626;}
+  .bn-box-tag.missing:hover{background:rgba(220,38,38,.18);}
+  .bn-box-tag.current{outline:2px solid #7c3aed;outline-offset:2px;}
+  .bn-empty{color:#94a3b8;font-size:.75rem;font-family:'Consolas',monospace;padding:4px 0;}
+  @media(max-width:720px){.bn-layout{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>🐟 Rockfish Weatherwear 作業工具</h1>
+    <p>配貨分配 · 進度總覽 · 本次箱號</p>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('dist',this)">🏪 配貨</button>
+    <button class="nav-tab" onclick="showPage('progress',this)">📊 進度</button>
+    <button class="nav-tab" onclick="showPage('boxneed',this)">🗃 本次箱號</button>
+  </div>
+</header>
+
+
+<!-- PAGE 2: 配貨分配 -->
+<div class="page active" id="page-dist">>
+  <div class="card">
+    <div class="search-row">
+      <div class="input-wrap">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 5h4l2 9h8l2-9h4"/><circle cx="10" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg>
+        <input type="text" id="distInput" placeholder="刷 Barcode..." autocomplete="off" spellcheck="false">
+      </div>
+    </div>
+    <p class="scan-hint">刷一次 = 分配一雙，顯示這雙給誰</p>
+  </div>
+  <div id="distActionRow" class="action-row" style="display:none;">
+    <button class="action-btn btn-undo" onclick="undoScan()">↩ 復原上一次</button>
+    <button class="action-btn btn-reset" onclick="resetCurrent()">🔄 重置此品項</button>
+  </div>
+  <div id="distResult"></div>
+</div>
+
+<!-- PAGE 3: 進度總覽 -->
+<div class="page" id="page-progress">
+  <div class="overview-stats" id="overviewStats"></div>
+  <div class="progress-summary-header">
+    <h2>各品項 · 各店進度</h2>
+    <div class="store-filter-row" id="storeFilterRow"></div>
+  </div>
+  <div class="progress-table-wrap">
+    <div style="overflow-x:auto;">
+      <table class="progress-table" id="progressTable">
+        <thead id="progressThead"></thead>
+        <tbody id="progressTbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const ALL_STORES = ['RFW TPE','RFW NX','RFW A11','RFW EC','FRTN TPE','補貨倉'];
+const STORE_COLORS = {
+  'RFW TPE':'#0f3460','RFW NX':'#7c3aed','RFW A11':'#b45309',
+  'RFW EC':'#0369a1','FRTN TPE':'#be185d','補貨倉':'#047857'
+};
+
+function showPage(name,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  el.classList.add('active');
+  if(name==='dist') setTimeout(()=>document.getElementById('distInput').focus(),100);
+  if(name==='progress') renderProgress();
+  if(name==='boxneed'){bnRenderTable();bnUpdateSide();setTimeout(()=>document.getElementById('bnBoxInput').focus(),100);}
+  syncLoad();
+}
+
+const DIST_DATA = {"RF1SHBF3FL006PK040":{"desc":"SQUARE TOE TWO STRAP MARYJANE (ENAMEL)","color":"PINK","size":"235(UK4)","stores":{"RFW TPE":1,"RFW NX":2,"RFW A11":1,"RFW EC":1}},"RF1SHBF3FL006PK050":{"desc":"SQUARE TOE TWO STRAP MARYJANE (ENAMEL)","color":"PINK","size":"240(UK4.5)","stores":{"RFW TPE":2,"RFW NX":3,"RFW A11":3,"RFW EC":2}},"RF1SHBF3FL006PK055":{"desc":"SQUARE TOE TWO STRAP MARYJANE (ENAMEL)","color":"PINK","size":"245(UK5)","stores":{"RFW TPE":2,"RFW NX":3,"RFW A11":3,"RFW EC":2}},"RF1SHBF3FL006PK060":{"desc":"SQUARE TOE TWO STRAP MARYJANE (ENAMEL)","color":"PINK","size":"250(UK5.5)","stores":{"RFW TPE":1,"RFW NX":2,"RFW A11":1,"RFW EC":1}},"RF1SHBF3FL006WH030":{"desc":"SQUARE TOE TWO STRAP MARYJANE (ENAMEL)","color":"WHITE","size":"230(UK3.5)","stores":{"RFW TPE":1,"RFW NX":1,"RFW A11":1,"RFW EC":1,"FRTN TPE":1}},"RF1SHBF3FL006WH040":{"desc":"SQUARE TOE TWO STRAP MARYJANE (ENAMEL)","color":"WHITE","size":"235(UK4)","stores":{"RFW TPE":2,"RFW NX":3,"RFW A11":2,"RFW EC":2,"FRTN TPE":1}},"RF1SHBF3FL006WH050":{"desc":"SQUARE TOE TWO STRAP MARYJANE (ENAMEL)","color":"WHITE","size":"240(UK4.5)","stores":{"RFW TPE":2,"RFW NX":3,"RFW A11":2,"RFW EC":3,"FRTN TPE":2,"補貨倉":13}},"RF1SHBF3FL006WH055":{"desc":"SQUARE TOE TWO STRAP MARYJANE (ENAMEL)","color":"WHITE","size":"245(UK5)","stores":{"RFW TPE":2,"RFW NX":3,"RFW A11":2,"RFW EC":3,"FRTN TPE":2,"補貨倉":15}},"RF1SHBF3FL006WH060":{"desc":"SQUARE TOE TWO STRAP MARYJANE (ENAMEL)","color":"WHITE","size":"250(UK5.5)","stores":{"RFW TPE":2,"RFW NX":4,"RFW A11":3,"RFW EC":3,"FRTN TPE":3}},"RF1SHBF3FL006WH065":{"desc":"SQUARE TOE TWO STRAP MARYJANE (ENAMEL)","color":"WHITE","size":"255(UK6)","stores":{"RFW TPE":1,"RFW NX":1,"RFW A11":1,"RFW EC":1,"FRTN TPE":1}},"RF1SHBG1FL012BK040":{"desc":"TULE MARYJANE","color":"BLACK","size":"235(UK4)","stores":{"RFW TPE":1,"RFW NX":1,"RFW A11":1,"RFW EC":1,"FRTN TPE":1}},"RF1SHBG1FL012BK050":{"desc":"TULE MARYJANE","color":"BLACK","size":"240(UK4.5)","stores":{"RFW TPE":2,"RFW NX":4,"RFW A11":3,"RFW EC":3,"FRTN TPE":3}},"RF1SHBG1FL012BK055":{"desc":"TULE MARYJANE","color":"BLACK","size":"245(UK5)","stores":{"RFW TPE":4,"RFW NX":4,"RFW A11":4,"RFW EC":4,"FRTN TPE":3}},"RF1SHBG1FL012BK060":{"desc":"TULE MARYJANE","color":"BLACK","size":"250(UK5.5)","stores":{"RFW TPE":2,"RFW NX":2,"RFW A11":2,"RFW EC":2,"FRTN TPE":2}},"RF1SHBG1FL012PK040":{"desc":"TULE MARYJANE","color":"PINK","size":"235(UK4)","stores":{"RFW TPE":1,"RFW NX":1,"RFW A11":1,"RFW EC":1,"FRTN TPE":1}},"RF1SHBG1FL012PK050":{"desc":"TULE MARYJANE","color":"PINK","size":"240(UK4.5)","stores":{"RFW TPE":2,"RFW NX":2,"RFW A11":2,"RFW EC":2,"FRTN TPE":2}},"RF1SHBG1FL012PK055":{"desc":"TULE MARYJANE","color":"PINK","size":"245(UK5)","stores":{"RFW TPE":2,"RFW NX":2,"RFW A11":2,"RFW EC":2,"FRTN TPE":2}},"RF1SHBG1FL012PK060":{"desc":"TULE MARYJANE","color":"PINK","size":"250(UK5.5)","stores":{"RFW TPE":1,"RFW NX":1,"RFW A11":1,"RFW EC":1}},"RF1SHBG1FL013BK030":{"desc":"BANDING BALLET FLAT","color":"BLACK","size":"230(UK3.5)","stores":{"RFW TPE":1,"RFW NX":1,"RFW A11":1,"RFW EC":1,"FRTN TPE":1}},"RF1SHBG1FL013BK040":{"desc":"BANDING BALLET FLAT","color":"BLACK","size":"235(UK4)","stores":{"RFW TPE":2,"RFW NX":2,"RFW A11":2,"RFW EC":2,"FRTN TPE":2}},"RF1SHBG1FL013BK050":{"desc":"BANDING BALLET FLAT","color":"BLACK","size":"240(UK4.5)","stores":{"RFW TPE":3,"RFW NX":4,"RFW A11":3,"RFW EC":3,"FRTN TPE":2,"補貨倉":10}},"RF1SHBG1FL013BK055":{"desc":"BANDING BALLET FLAT","color":"BLACK","size":"245(UK5)","stores":{"RFW TPE":3,"RFW NX":4,"RFW A11":3,"RFW EC":3,"FRTN TPE":2,"補貨倉":10}},"RF1SHBG1FL013BK060":{"desc":"BANDING BALLET FLAT","color":"BLACK","size":"250(UK5.5)","stores":{"RFW TPE":2,"RFW NX":4,"RFW A11":3,"RFW EC":3,"FRTN TPE":3}},"RF1SHBG1FL013BK065":{"desc":"BANDING BALLET FLAT","color":"BLACK","size":"255(UK6)","stores":{"RFW TPE":2,"RFW NX":2,"RFW A11":2,"RFW EC":2,"FRTN TPE":2}},"RF1SHBG1FL013BR040":{"desc":"BANDING BALLET FLAT","color":"BROWN","size":"235(UK4)","stores":{"RFW TPE":1,"RFW NX":1,"RFW A11":1,"RFW EC":1,"FRTN TPE":1}},"RF1SHBG1FL013BR050":{"desc":"BANDING BALLET FLAT","color":"BROWN","size":"240(UK4.5)","stores":{"RFW TPE":2,"RFW NX":4,"RFW A11":3,"RFW EC":3,"FRTN TPE":3}},"RF1SHBG1FL013BR055":{"desc":"BANDING BALLET FLAT","color":"BROWN","size":"245(UK5)","stores":{"RFW TPE":2,"RFW NX":4,"RFW A11":3,"RFW EC":3,"FRTN TPE":3}},"RF1SHBG1FL013BR060":{"desc":"BANDING BALLET FLAT","color":"BROWN","size":"250(UK5.5)","stores":{"RFW TPE":2,"RFW NX":2,"RFW A11":2,"RFW EC":2,"FRTN TPE":2}},"RF1SHBG1FL013BR065":{"desc":"BANDING BALLET FLAT","color":"BROWN","size":"255(UK6)","stores":{"RFW TPE":1,"RFW NX":1,"RFW A11":1,"RFW EC":1,"FRTN TPE":1}},"RF1SHBG1FL013GY040":{"desc":"BANDING BALLET FLAT","color":"LIGHT GREY","size":"235(UK4)","stores":{"RFW TPE":1,"RFW NX":2,"RFW A11":1,"RFW EC":1}},"RF1SHBG1FL013GY050":{"desc":"BANDING BALLET FLAT","color":"LIGHT GREY","size":"240(UK4.5)","stores":{"RFW TPE":2,"RFW NX":3,"RFW A11":3,"RFW EC":2}},"RF1SHBG1FL013GY055":{"desc":"BANDING BALLET FLAT","color":"LIGHT GREY","size":"245(UK5)","stores":{"RFW TPE":2,"RFW NX":3,"RFW A11":2,"RFW EC":2}},"RF1SHBG1FL013GY060":{"desc":"BANDING BALLET FLAT","color":"LIGHT GREY","size":"250(UK5.5)","stores":{"RFW TPE":1,"RFW NX":2,"RFW A11":1,"RFW EC":1}},"RF1SHBG1FL013PK040":{"desc":"BANDING BALLET FLAT","color":"PINK","size":"235(UK4)","stores":{"RFW TPE":1,"RFW NX":1,"RFW A11":1,"RFW EC":1,"FRTN TPE":1}},"RF1SHBG1FL013PK050":{"desc":"BANDING BALLET FLAT","color":"PINK","size":"240(UK4.5)","stores":{"RFW TPE":2,"RFW NX":4,"RFW A11":3,"RFW EC":3,"FRTN TPE":3}},"RF1SHBG1FL013PK055":{"desc":"BANDING BALLET FLAT","color":"PINK","size":"245(UK5)","stores":{"RFW TPE":2,"RFW NX":4,"RFW A11":3,"RFW EC":3,"FRTN TPE":3}},"RF1SHBG1FL013PK060":{"desc":"BANDING BALLET FLAT","color":"PINK","size":"250(UK5.5)","stores":{"RFW TPE":2,"RFW NX":2,"RFW A11":2,"RFW EC":2,"FRTN TPE":2}},"RF1SHBG1FL013PK065":{"desc":"BANDING BALLET FLAT","color":"PINK","size":"255(UK6)","stores":{"RFW TPE":1,"RFW NX":1,"RFW A11":1,"RFW EC":1,"FRTN TPE":1}}};
+
+
+
+/* ═══════════════════════════════════════════
+   配貨分配
+═══════════════════════════════════════════ */
+let distState={};
+let currentBC=null;
+let scanTimer=null;
+
+function buildQueue(stores){
+  const q=[];
+  ALL_STORES.forEach(s=>{const n=stores[s]||0;for(let i=0;i<n;i++)q.push(s);});
+  return q;
+}
+function getState(bc){
+  if(!distState[bc]){
+    const info=findDist(bc);
+    if(!info) return null;
+    const queue=buildQueue(info.stores);
+    distState[bc]={given:{},history:[],queue,total:queue.length,info};
+  }
+  return distState[bc];
+}
+function findDist(bc){
+  const key=Object.keys(DIST_DATA).find(k=>k.toUpperCase()===bc.toUpperCase());
+  return key?DIST_DATA[key]:null;
+}
+function givenCount(state){return state.history.filter(s=>s!=='__OVER__').length;}
+function currentStoreFor(state){
+  const idx=givenCount(state);
+  return idx<state.queue.length?state.queue[idx]:null;
+}
+function givenPerStore(state){
+  const out={};ALL_STORES.forEach(s=>out[s]=0);
+  state.history.forEach(s=>{if(s!=='__OVER__')out[s]=(out[s]||0)+1;});
+  return out;
+}
+
+function onScan(raw){
+  const bc=raw.trim();if(!bc)return;
+  const state=getState(bc);
+  if(!state){renderNotFound(bc);currentBC=null;document.getElementById('distActionRow').style.display='none';return;}
+  currentBC=bc;
+  document.getElementById('distActionRow').style.display='flex';
+  const next=currentStoreFor(state);
+  if(next===null){
+    // 已超過總量：繼續記錄為超量
+    state.history.push('__OVER__');
+    renderOverLimit(state,bc);
+    return;
+  }
+  state.history.push(next);
+  renderDistCard(state,bc);
+}
+function undoScan(){
+  if(!currentBC)return;
+  const state=distState[currentBC];
+  if(!state||state.history.length===0)return;
+  state.history.pop();
+  const overCount=state.history.filter(s=>s==='__OVER__').length;
+  if(overCount>0){renderOverLimit(state,currentBC);return;}
+  if(state.history.length===0){document.getElementById('distResult').innerHTML='';return;}
+  renderDistCard(state,currentBC);
+}
+function resetCurrent(){
+  if(!currentBC)return;
+  const state=distState[currentBC];
+  if(state){state.history=[];renderDistCard(state,currentBC);}
+}
+
+function renderDistCard(state,bc){
+  const el=document.getElementById('distResult');
+  const given=givenCount(state);
+  const remaining=state.total-given;
+  // 這雙 = history 最後一筆；下一雙 = currentStoreFor（用於進度箭頭）
+  const thisStore=state.history.length>0?state.history[state.history.length-1]:null;
+  const nextStore=currentStoreFor(state);
+  const perStore=givenPerStore(state);
+  const displayStore=thisStore||nextStore;
+  const color=STORE_COLORS[displayStore]||'#059669';
+  const info=state.info;
+  let progressHTML='';
+  ALL_STORES.forEach(s=>{
+    const need=info.stores[s]||0;if(need===0)return;
+    const done=perStore[s]||0;
+    const isThis=s===thisStore;
+    const isDone=done>=need;
+    const pct=Math.min(100,Math.round(done/need*100));
+    const c=STORE_COLORS[s];
+    progressHTML+=`<div class="store-row ${isDone?'done':''}">
+      <div class="store-row-name" style="color:${isDone?'#94a3b8':c};font-weight:${isThis?800:600};">${isThis?'▶ ':''}${s}</div>
+      <div class="progress-bar-wrap"><div class="progress-bar" style="width:${pct}%;background:${c};opacity:${isDone?.45:1};"></div></div>
+      <div class="store-row-nums">${done}/${need}</div>
+    </div>`;
+  });
+  if(!thisStore){el.innerHTML='';return;}
+  const storeNeed=info.stores[thisStore]||0;
+  const storeGiven=perStore[thisStore]||0;
+  const allDone=nextStore===null;
+  el.innerHTML=`
+  <div class="assign-card">
+    <div class="assign-store" style="background:${color};">
+      <div class="store-label" style="color:rgba(255,255,255,.75);">${info.desc} · ${info.color} · ${info.size}</div>
+      <div class="store-name">${thisStore}</div>
+      <div class="store-count">這雙給此店（已給 <strong style="font-size:1.35rem;">${storeGiven}</strong> / ${storeNeed} 雙）</div>
+    </div>
+    <div class="stores-progress">
+      <div class="progress-title">各店進度</div>${progressHTML}
+    </div>
+  </div>
+  <div style="text-align:center;font-size:.76rem;color:#94a3b8;margin-top:6px;">
+    累計已確認：${given} / ${state.total} 雙${allDone?' · <span style="color:#059669;font-weight:700;">✅ 全部完成</span>':' · 剩餘 '+remaining+' 雙'}
+  </div>`;
+  if(allDone) setTimeout(()=>renderAllDone(state,bc),800);
+}
+
+function renderOverLimit(state,bc){
+  const el=document.getElementById('distResult');
+  const info=state.info;
+  const overCount=state.history.filter(s=>s==='__OVER__').length;
+  el.innerHTML=`
+  <div style="background:linear-gradient(135deg,#dc2626,#991b1b);border-radius:20px;padding:36px 24px;text-align:center;box-shadow:0 4px 24px rgba(220,38,38,.4);margin-bottom:14px;animation:pulse 0.4s ease;">
+    <div style="font-size:3rem;margin-bottom:10px;">⚠️</div>
+    <div style="color:white;font-size:2rem;font-weight:900;letter-spacing:-0.5px;margin-bottom:8px;">超量！</div>
+    <div style="color:rgba(255,255,255,.9);font-size:1rem;font-weight:700;margin-bottom:16px;">
+      ${info.desc} · ${info.color} · ${info.size}
+    </div>
+    <div style="background:rgba(255,255,255,.15);border-radius:14px;padding:14px 20px;display:inline-block;">
+      <div style="color:rgba(255,255,255,.75);font-size:.8rem;font-weight:600;margin-bottom:4px;">應配總量</div>
+      <div style="color:white;font-size:1.8rem;font-weight:900;">${state.total} 雙</div>
+    </div>
+    <div style="color:rgba(255,255,255,.5);font-size:1.4rem;font-weight:900;display:inline-block;margin:0 12px;">→</div>
+    <div style="background:rgba(255,255,255,.25);border-radius:14px;padding:14px 20px;display:inline-block;border:2px solid rgba(255,255,255,.5);">
+      <div style="color:rgba(255,255,255,.9);font-size:.8rem;font-weight:600;margin-bottom:4px;">實際刷出</div>
+      <div style="color:white;font-size:1.8rem;font-weight:900;">${state.total+overCount} 雙</div>
+    </div>
+    <div style="margin-top:16px;color:rgba(255,255,255,.85);font-size:.9rem;font-weight:700;">
+      多出 <span style="font-size:1.4rem;font-weight:900;">${overCount}</span> 雙，請確認是否刷錯
+    </div>
+  </div>`;
+}
+function renderAllDone(state,bc){
+  const el=document.getElementById('distResult');
+  const info=state.info;
+  let summaryHTML='';
+  ALL_STORES.forEach(s=>{
+    const need=info.stores[s]||0;if(need===0)return;
+    summaryHTML+=`<span style="background:rgba(255,255,255,.2);border-radius:20px;padding:4px 12px;font-size:.82rem;font-weight:700;">${s} × ${need}</span>`;
+  });
+  el.innerHTML=`<div class="all-done">
+    <div class="done-icon">✅</div><h2>分配完成！</h2>
+    <p>${info.desc} · ${info.color} · ${info.size}</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:14px;">${summaryHTML}</div>
+    <div style="margin-top:16px;opacity:.8;font-size:.83rem;">共 ${state.total} 雙已全部分配完畢</div>
+  </div>`;
+}
+function renderNotFound(bc){
+  document.getElementById('distResult').innerHTML=`<div class="not-found">
+    <div style="font-size:1.8rem;margin-bottom:8px;">❓</div>
+    <p><strong>${bc}</strong></p>
+    <p style="color:#64748b;font-size:.88rem;margin-top:5px;">查無此 Barcode 的配貨資料</p>
+  </div>`;
+}
+
+const distInput=document.getElementById('distInput');
+distInput.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){clearTimeout(scanTimer);const val=distInput.value.trim();if(val){onScan(val);distInput.value='';}}
+  else{clearTimeout(scanTimer);scanTimer=setTimeout(()=>{const val=distInput.value.trim();if(val.length>=8){onScan(val);distInput.value='';}},150);}
+});
+distInput.addEventListener('paste',()=>{clearTimeout(scanTimer);scanTimer=setTimeout(()=>{const val=distInput.value.trim();if(val){onScan(val);distInput.value='';}},50);});
+
+/* ═══════════════════════════════════════════
+   進度總覽
+═══════════════════════════════════════════ */
+let progressFilter='ALL';
+
+function initProgressFilter(){
+  const row=document.getElementById('storeFilterRow');
+  let html=`<button class="store-filter-btn active" style="background:#1a1a2e;border-color:#1a1a2e;color:white;" onclick="setProgressFilter('ALL',this)">全部</button>`;
+  ALL_STORES.forEach(s=>{
+    const c=STORE_COLORS[s];
+    html+=`<button class="store-filter-btn" style="" onclick="setProgressFilter('${s}',this)">${s}</button>`;
+  });
+  row.innerHTML=html;
+}
+
+function setProgressFilter(f,el){
+  progressFilter=f;
+  document.querySelectorAll('.store-filter-btn').forEach(b=>{
+    b.classList.remove('active');
+    b.style.background='white';b.style.color='#64748b';b.style.borderColor='#e2e8f0';
+  });
+  el.classList.add('active');
+  if(f==='ALL'){el.style.background='#1a1a2e';el.style.color='white';el.style.borderColor='#1a1a2e';}
+  else{const c=STORE_COLORS[f];el.style.background=c;el.style.color='white';el.style.borderColor=c;}
+  renderProgressTable();
+}
+
+function renderProgress(){
+  initProgressFilter();
+  renderOverviewStats();
+  renderProgressTable();
+}
+
+function renderOverviewStats(){
+  const el=document.getElementById('overviewStats');
+  // 計算每個店家的總需求 vs 已給
+  const storeTotals={};
+  ALL_STORES.forEach(s=>storeTotals[s]={need:0,given:0});
+
+  Object.keys(DIST_DATA).forEach(bc=>{
+    const info=DIST_DATA[bc];
+    const state=distState[bc];
+    const perStore=state?givenPerStore(state):{};
+    const overCount=state?state.history.filter(s=>s==='__OVER__').length:0;
+    ALL_STORES.forEach(s=>{
+      const need=info.stores[s]||0;
+      storeTotals[s].need+=need;
+      storeTotals[s].given+=Math.min(need,perStore[s]||0);
+    });
+    // 超量計入 total over
+    if(!storeTotals.__over) storeTotals.__over=0;
+    storeTotals.__over+=overCount;
+  });
+
+  let html='';
+  ALL_STORES.forEach(s=>{
+    const {need,given}=storeTotals[s];
+    if(need===0)return;
+    const c=STORE_COLORS[s];
+    const pct=need>0?Math.round(given/need*100):0;
+    html+=`<div class="overview-chip" style="border-top-color:${c};">
+      <div class="oc-name" style="color:${c};">${s}</div>
+      <div class="oc-nums" style="color:${c};">${given}<span style="font-size:.75rem;font-weight:500;color:#94a3b8;"> / ${need}</span></div>
+      <div class="oc-sub">${pct}% 完成</div>
+    </div>`;
+  });
+  el.innerHTML=html;
+}
+
+function renderProgressTable(){
+  const visibleStores = progressFilter==='ALL'
+    ? ALL_STORES.filter(s=>Object.values(DIST_DATA).some(info=>info.stores[s]))
+    : [progressFilter];
+
+  // Header
+  let theadHTML=`<tr><th style="text-align:left;min-width:180px;">品項</th>`;
+  visibleStores.forEach(s=>{
+    const c=STORE_COLORS[s];
+    theadHTML+=`<th style="color:${c};">${s}</th>`;
+  });
+  theadHTML+=`<th>合計</th></tr>`;
+  document.getElementById('progressThead').innerHTML=theadHTML;
+
+  // Rows
+  let tbodyHTML='';
+  const barcodes=Object.keys(DIST_DATA);
+
+  barcodes.forEach(bc=>{
+    const info=DIST_DATA[bc];
+    const state=distState[bc];
+    const perStore=state?givenPerStore(state):{};
+    const overCount=state?state.history.filter(s=>s==='__OVER__').length:0;
+    const isOver=overCount>0;
+
+    // 篩選：只顯示該店有配量的品項
+    if(progressFilter!=='ALL' && !(info.stores[progressFilter]>0)) return;
+
+    let rowTotal=0,rowGiven=0;
+    let cellsHTML='';
+    visibleStores.forEach(s=>{
+      const need=info.stores[s]||0;
+      const given=Math.min(need,perStore[s]||0);
+      rowTotal+=need;rowGiven+=given;
+      if(need===0){
+        cellsHTML+=`<td class="cell-na">—</td>`;
+      } else if(given>=need){
+        cellsHTML+=`<td class="cell-fraction cell-done">${given}/${need}</td>`;
+      } else if(given>0){
+        cellsHTML+=`<td class="cell-fraction cell-partial">${given}/${need}</td>`;
+      } else {
+        cellsHTML+=`<td class="cell-fraction cell-zero">0/${need}</td>`;
+      }
+    });
+
+    const allDone=rowGiven>=rowTotal&&rowTotal>0&&!isOver;
+    const anyDone=rowGiven>0;
+    const pill=isOver
+      ?`<span class="pill-over">⚠ 超量 +${overCount}</span>`
+      :allDone?`<span class="pill-done">完成</span>`
+      :anyDone?`<span class="pill-wip">進行中</span>`:'';
+
+    const totalCell=isOver
+      ?`<td class="cell-fraction" style="font-weight:800;color:#dc2626;">${rowGiven+overCount}/${rowTotal} <span style="font-size:.68rem;">+${overCount}</span></td>`
+      :`<td class="cell-fraction" style="font-weight:800;color:${allDone?'#059669':'#1a1a2e'};">${rowGiven}/${rowTotal}</td>`;
+
+    tbodyHTML+=`<tr class="${isOver?'row-over':allDone?'row-all-done':''}">
+      <td>
+        <div class="bc-info">
+          <div class="bc-main">${bc}${pill}</div>
+          <div class="bc-sub">${info.desc} · ${info.color} · ${info.size}</div>
+        </div>
+      </td>
+      ${cellsHTML}
+      ${totalCell}
+    </tr>`;
+  });
+
+  document.getElementById('progressTbody').innerHTML=tbodyHTML||'<tr><td colspan="20" style="text-align:center;padding:30px;color:#94a3b8;">無資料</td></tr>';
+}
+
+</script>
+
+
+<!-- PAGE: 本次配貨箱號 -->
+<div class="page" id="page-boxneed">
+  <div class="bn-input-row">
+    <div class="bn-input-wrap">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="bnBoxInput" placeholder="輸入箱號 PAXD... 查詢並標記已找到" autocomplete="off" spellcheck="false">
+    </div>
+    <button class="btn" onclick="bnReset()">清除記錄</button>
+  </div>
+  <div class="bn-banner" id="bnBanner"></div>
+  <div class="bn-legend">
+    <div class="bn-leg"><div class="bn-leg-dot" style="background:#059669"></div>此款所有箱號已找齊</div>
+    <div class="bn-leg"><div class="bn-leg-dot" style="background:#d97706"></div>此款部分箱號已找到</div>
+    <div class="bn-leg"><div class="bn-leg-dot" style="background:#dc2626"></div>此款尚未找到任何箱</div>
+  </div>
+  <div class="bn-layout">
+    <div>
+      <div class="bn-table-wrap">
+        <table class="bn-table">
+          <thead><tr><th>#</th><th>Barcode</th><th>品名 · 顏色 · 尺寸</th><th>箱號</th></tr></thead>
+          <tbody id="bnTbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="bn-side">
+      <div class="bn-side-card">
+        <div class="bn-stat-row"><span class="bn-stat-lbl">全部箱數</span><span class="bn-stat-val">28</span></div>
+        <div class="bn-stat-row"><span class="bn-stat-lbl">✅ 已找到</span><span class="bn-stat-val g" id="bnSFound">0</span></div>
+        <div class="bn-stat-row"><span class="bn-stat-lbl">❌ 未找到</span><span class="bn-stat-val r" id="bnSMissing">28</span></div>
+      </div>
+      <div class="bn-side-card">
+        <div class="bn-side-title"><span class="bn-dot" style="background:#059669"></span>已找到（點擊反查）</div>
+        <div class="bn-box-grid" id="bnFoundGrid"><span class="bn-empty">尚未查詢</span></div>
+      </div>
+      <div class="bn-side-card">
+        <div class="bn-side-title"><span class="bn-dot" style="background:#dc2626"></span>未找到（點擊反查）</div>
+        <div class="bn-box-grid" id="bnMissingGrid"><span class="bn-empty">尚未查詢</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── 本次箱號 ──
+const BN_ROWS = [{"num":1,"barcode":"RF1SHBF3FL006PK040","name":"SQUARE TOE TWO STRAP MARYJANE (ENAMEL)","color":"PINK","size":"235(UK4)","boxes":["PAXD260326000382"]},{"num":2,"barcode":"RF1SHBF3FL006PK050","name":"SQUARE TOE TWO STRAP MARYJANE (ENAMEL)","color":"PINK","size":"240(UK4.5)","boxes":["PAXD260326000379"]},{"num":3,"barcode":"RF1SHBF3FL006PK055","name":"SQUARE TOE TWO STRAP MARYJANE (ENAMEL)","color":"PINK","size":"245(UK5)","boxes":["PAXD260326000378"]},{"num":4,"barcode":"RF1SHBF3FL006PK060","name":"SQUARE TOE TWO STRAP MARYJANE (ENAMEL)","color":"PINK","size":"250(UK5.5)","boxes":["PAXD260326000372"]},{"num":5,"barcode":"RF1SHBF3FL006WH030","name":"SQUARE TOE TWO STRAP MARYJANE (ENAMEL)","color":"WHITE","size":"230(UK3.5)","boxes":["PAXD260326000382"]},{"num":6,"barcode":"RF1SHBF3FL006WH040","name":"SQUARE TOE TWO STRAP MARYJANE (ENAMEL)","color":"WHITE","size":"235(UK4)","boxes":["PAXD260326000380"]},{"num":7,"barcode":"RF1SHBF3FL006WH050","name":"SQUARE TOE TWO STRAP MARYJANE (ENAMEL)","color":"WHITE","size":"240(UK4.5)","boxes":["PAXD260326000372","PAXD260326000374","PAXD260326000375"]},{"num":8,"barcode":"RF1SHBF3FL006WH055","name":"SQUARE TOE TWO STRAP MARYJANE (ENAMEL)","color":"WHITE","size":"245(UK5)","boxes":["PAXD260326000376","PAXD260326000377","PAXD260326000381"]},{"num":9,"barcode":"RF1SHBF3FL006WH060","name":"SQUARE TOE TWO STRAP MARYJANE (ENAMEL)","color":"WHITE","size":"250(UK5.5)","boxes":["PAXD260326000372","PAXD260326000373"]},{"num":10,"barcode":"RF1SHBF3FL006WH065","name":"SQUARE TOE TWO STRAP MARYJANE (ENAMEL)","color":"WHITE","size":"255(UK6)","boxes":["PAXD260326000381"]},{"num":11,"barcode":"RF1SHBG1FL012BK040","name":"TULE MARYJANE","color":"BLACK","size":"235(UK4)","boxes":["PAXD260402000013"]},{"num":12,"barcode":"RF1SHBG1FL012BK050","name":"TULE MARYJANE","color":"BLACK","size":"240(UK4.5)","boxes":["PAXD260402000013"]},{"num":13,"barcode":"RF1SHBG1FL012BK055","name":"TULE MARYJANE","color":"BLACK","size":"245(UK5)","boxes":["PAXD260402000012"]},{"num":14,"barcode":"RF1SHBG1FL012BK060","name":"TULE MARYJANE","color":"BLACK","size":"250(UK5.5)","boxes":["PAXD260402000014"]},{"num":15,"barcode":"RF1SHBG1FL012PK040","name":"TULE MARYJANE","color":"PINK","size":"235(UK4)","boxes":["PAXD260421000031"]},{"num":16,"barcode":"RF1SHBG1FL012PK050","name":"TULE MARYJANE","color":"PINK","size":"240(UK4.5)","boxes":["PAXD260421000032"]},{"num":17,"barcode":"RF1SHBG1FL012PK055","name":"TULE MARYJANE","color":"PINK","size":"245(UK5)","boxes":["PAXD260421000031"]},{"num":18,"barcode":"RF1SHBG1FL012PK060","name":"TULE MARYJANE","color":"PINK","size":"250(UK5.5)","boxes":["PAXD260421000031"]},{"num":19,"barcode":"RF1SHBG1FL013BK030","name":"BANDING BALLET FLAT","color":"BLACK","size":"230(UK3.5)","boxes":["PAXD260330000164"]},{"num":20,"barcode":"RF1SHBG1FL013BK040","name":"BANDING BALLET FLAT","color":"BLACK","size":"235(UK4)","boxes":["PAXD260330000164"]},{"num":21,"barcode":"RF1SHBG1FL013BK050","name":"BANDING BALLET FLAT","color":"BLACK","size":"240(UK4.5)","boxes":["PAXD260330000165","PAXD260330000167"]},{"num":22,"barcode":"RF1SHBG1FL013BK055","name":"BANDING BALLET FLAT","color":"BLACK","size":"245(UK5)","boxes":["PAXD260330000166","PAXD260330000167"]},{"num":23,"barcode":"RF1SHBG1FL013BK060","name":"BANDING BALLET FLAT","color":"BLACK","size":"250(UK5.5)","boxes":["PAXD260330000168"]},{"num":24,"barcode":"RF1SHBG1FL013BK065","name":"BANDING BALLET FLAT","color":"BLACK","size":"255(UK6)","boxes":["PAXD260330000169"]},{"num":25,"barcode":"RF1SHBG1FL013BR040","name":"BANDING BALLET FLAT","color":"BROWN","size":"235(UK4)","boxes":["PAXD260403000369"]},{"num":26,"barcode":"RF1SHBG1FL013BR050","name":"BANDING BALLET FLAT","color":"BROWN","size":"240(UK4.5)","boxes":["PAXD260403000370"]},{"num":27,"barcode":"RF1SHBG1FL013BR055","name":"BANDING BALLET FLAT","color":"BROWN","size":"245(UK5)","boxes":["PAXD260403000372"]},{"num":28,"barcode":"RF1SHBG1FL013BR060","name":"BANDING BALLET FLAT","color":"BROWN","size":"250(UK5.5)","boxes":["PAXD260403000373"]},{"num":29,"barcode":"RF1SHBG1FL013BR065","name":"BANDING BALLET FLAT","color":"BROWN","size":"255(UK6)","boxes":["PAXD260403000371"]},{"num":30,"barcode":"RF1SHBG1FL013GY040","name":"BANDING BALLET FLAT","color":"LIGHT GREY","size":"235(UK4)","boxes":["PAXD260403000370"]},{"num":31,"barcode":"RF1SHBG1FL013GY050","name":"BANDING BALLET FLAT","color":"LIGHT GREY","size":"240(UK4.5)","boxes":["PAXD260403000373"]},{"num":32,"barcode":"RF1SHBG1FL013GY055","name":"BANDING BALLET FLAT","color":"LIGHT GREY","size":"245(UK5)","boxes":["PAXD260330000168","PAXD260330000169"]},{"num":33,"barcode":"RF1SHBG1FL013GY060","name":"BANDING BALLET FLAT","color":"LIGHT GREY","size":"250(UK5.5)","boxes":["PAXD260330000164"]},{"num":34,"barcode":"RF1SHBG1FL013PK040","name":"BANDING BALLET FLAT","color":"PINK","size":"235(UK4)","boxes":["PAXD260403000374"]},{"num":35,"barcode":"RF1SHBG1FL013PK050","name":"BANDING BALLET FLAT","color":"PINK","size":"240(UK4.5)","boxes":["PAXD260403000371"]},{"num":36,"barcode":"RF1SHBG1FL013PK055","name":"BANDING BALLET FLAT","color":"PINK","size":"245(UK5)","boxes":["PAXD260403000369"]},{"num":37,"barcode":"RF1SHBG1FL013PK060","name":"BANDING BALLET FLAT","color":"PINK","size":"250(UK5.5)","boxes":["PAXD260403000374"]},{"num":38,"barcode":"RF1SHBG1FL013PK065","name":"BANDING BALLET FLAT","color":"PINK","size":"255(UK6)","boxes":["PAXD260403000372"]}];
+const BN_ALL_BOXES = ["PAXD260326000372", "PAXD260326000373", "PAXD260326000374", "PAXD260326000375", "PAXD260326000376", "PAXD260326000377", "PAXD260326000378", "PAXD260326000379", "PAXD260326000380", "PAXD260326000381", "PAXD260326000382", "PAXD260330000164", "PAXD260330000165", "PAXD260330000166", "PAXD260330000167", "PAXD260330000168", "PAXD260330000169", "PAXD260402000012", "PAXD260402000013", "PAXD260402000014", "PAXD260403000369", "PAXD260403000370", "PAXD260403000371", "PAXD260403000372", "PAXD260403000373", "PAXD260403000374", "PAXD260421000031", "PAXD260421000032"];
+let bnFound = new Set();
+let bnCurrent = null;
+
+function bnRowStatus(row){
+  const done = row.boxes.filter(b=>bnFound.has(b)).length;
+  if(done===0) return 'r';
+  if(done===row.boxes.length) return 'g';
+  return 'y';
+}
+
+function bnRenderTable(){
+  document.getElementById('bnTbody').innerHTML = BN_ROWS.map(row=>{
+    const hasCurrentBox = bnCurrent && row.boxes.includes(bnCurrent);
+    const isSearching = bnCurrent !== null;
+    // 有搜尋中：只有包含目前箱號的列亮燈，其他暗
+    // 沒有搜尋：全部正常顯示（依找到狀態）
+    let rc, nc, bcColor, dimmed;
+    if(isSearching){
+      if(hasCurrentBox){
+        // 亮燈：綠色高亮
+        rc='row-g'; nc='g'; bcColor='#059669'; dimmed=false;
+      } else {
+        // 暗掉
+        rc='row-na'; nc='na'; bcColor='#cbd5e1'; dimmed=true;
+      }
+    } else {
+      const st = bnRowStatus(row);
+      rc = st==='g'?'row-g':st==='y'?'row-y':'row-r';
+      nc = st;
+      bcColor = st==='g'?'#059669':st==='y'?'#d97706':'#dc2626';
+      dimmed = false;
+    }
+    const boxStr = row.boxes.map(b=>{
+      const isCur = b===bnCurrent;
+      return isCur?`<span style="background:#fef08a;border-radius:3px;padding:0 3px;color:#1a1a2e;">${b}</span>`:b;
+    }).join('、');
+    return `<tr class="${rc}">
+      <td class="td-n ${nc}">${dimmed?'—':row.num}</td>
+      <td class="bn-bc" style="color:${bcColor}">${row.barcode}</td>
+      <td class="bn-desc">${row.name}<br><span style="color:#94a3b8">${row.color} · ${row.size}</span></td>
+      <td class="bn-boxes">${boxStr}</td>
+    </tr>`;
+  }).join('');
+}
+
+function bnUpdateSide(){
+  const missing = BN_ALL_BOXES.filter(b=>!bnFound.has(b));
+  const foundArr = BN_ALL_BOXES.filter(b=>bnFound.has(b));
+  document.getElementById('bnSFound').textContent = bnFound.size;
+  document.getElementById('bnSMissing').textContent = missing.length;
+  document.getElementById('bnFoundGrid').innerHTML = foundArr.length===0
+    ? '<span class="bn-empty">尚未查詢</span>'
+    : foundArr.map(b=>`<button class="bn-box-tag found${bnCurrent===b?' current':''}" onclick="bnDoSearch('${b}')">${b.replace('PAXD','PAXD\n')}</button>`).join('');
+  document.getElementById('bnMissingGrid').innerHTML = missing.length===BN_ALL_BOXES.length
+    ? '<span class="bn-empty">尚未查詢</span>'
+    : missing.map(b=>`<button class="bn-box-tag missing${bnCurrent===b?' current':''}" onclick="bnDoSearch('${b}')">${b.replace('PAXD','PAXD\n')}</button>`).join('');
+}
+
+function bnDoSearch(val){
+  val = val.trim().toUpperCase();
+  if(!val) return;
+  bnCurrent = val;
+  document.getElementById('bnBoxInput').value = val;
+  const hits = BN_ROWS.filter(r=>r.boxes.includes(val));
+  const banner = document.getElementById('bnBanner');
+  banner.style.display = 'block';
+  if(hits.length>0){
+    banner.className='bn-banner hit';
+    banner.textContent=`箱號 ${val} ✅ 找到 ${hits.length} 個款式`;
+    if(!bnFound.has(val)) bnFound.add(val);
+  } else {
+    banner.className='bn-banner miss';
+    banner.textContent=`箱號 ${val} ❌ 此箱號不在本次配貨清單`;
+  }
+  bnRenderTable();
+  bnUpdateSide();
+}
+
+function bnReset(){
+  bnFound.clear(); bnCurrent=null;
+  document.getElementById('bnBoxInput').value='';
+  document.getElementById('bnBanner').style.display='none';
+  bnRenderTable(); bnUpdateSide();
+}
+
+document.getElementById('bnBoxInput').addEventListener('keydown', e=>{
+  if(e.key==='Enter'){ bnDoSearch(document.getElementById('bnBoxInput').value); document.getElementById('bnBoxInput').select(); }
+});
+document.getElementById('bnBoxInput').addEventListener('input', ()=>{
+  const val = document.getElementById('bnBoxInput').value.trim();
+  if(val.length>=16) { bnDoSearch(val); document.getElementById('bnBoxInput').select(); }
+});
+
+bnRenderTable(); bnUpdateSide();
+</script>
+
+<div class="sync-bar" id="syncBar">
+  <div class="sync-info">
+    <div class="sync-dot ok" id="syncDot"></div>
+    <span id="syncStatus">正在連線...</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span id="syncTime" style="opacity:.5;">-</span>
+    <button class="sync-reset-btn" onclick="confirmResetAll()">🔄 重置所有進度</button>
+  </div>
+</div>
+<div style="height:36px;"></div>
+<script>
+// ══════════════════════════════════════════
+//  多人同步 — Google Apps Script 後端
+// ══════════════════════════════════════════
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxrQoSSLgXgAhIYBdnhoOqXzfQkSOE0WpfIJp64HOJjoy02Vbj6Ed1wOg1cgJuNXqyMhQ/exec';
+const SYNC_INTERVAL = 3000; // 3秒 poll
+let _lastTs = 0;
+let _syncTimer = null;
+let _pendingSave = false;
+
+function setSyncStatus(state, msg) {
+  const dot = document.getElementById('syncDot');
+  const status = document.getElementById('syncStatus');
+  if(!dot||!status) return;
+  dot.className = 'sync-dot ' + state;
+  status.textContent = msg;
+}
+
+function setSyncTime() {
+  const el = document.getElementById('syncTime');
+  if(el) el.textContent = '最後同步 ' + new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+// ── 從後端讀取 ──
+async function syncLoad() {
+  try {
+    setSyncStatus('syncing','同步中...');
+    const res = await fetch(GAS_URL + '?ts=' + Date.now());
+    const data = await res.json();
+    if(!data || !data.ts || data.ts <= _lastTs) {
+      setSyncStatus('ok','已同步');
+      setSyncTime();
+      return;
+    }
+    _lastTs = data.ts;
+    // 更新配貨進度
+    if(data.distHistory) {
+      Object.entries(data.distHistory).forEach(([bc, hist]) => {
+        if(distState[bc]) distState[bc].history = hist;
+      });
+    }
+    // 更新箱號
+    if(data.bnFound) bnFound = new Set(data.bnFound);
+    setSyncStatus('ok','已同步');
+    setSyncTime();
+    // 刷新目前頁面顯示
+    refreshCurrentPage();
+  } catch(e) {
+    setSyncStatus('err','連線失敗');
+  }
+}
+
+// ── 推送到後端 ──
+async function syncSave() {
+  try {
+    const payload = {
+      ts: Date.now(),
+      distHistory: Object.fromEntries(
+        Object.entries(distState).map(([bc,s]) => [bc, s.history])
+      ),
+      bnFound: [...bnFound]
+    };
+    await fetch(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    _lastTs = payload.ts;
+    setSyncTime();
+  } catch(e) {
+    setSyncStatus('err','儲存失敗');
+  }
+}
+
+// ── 刷新目前頁面 ──
+function refreshCurrentPage() {
+  const activePage = document.querySelector('.page.active');
+  if(!activePage) return;
+  const id = activePage.id;
+  if(id === 'page-dist' && currentBC) {
+    renderDistCard(distState[currentBC], currentBC);
+  }
+  if(id === 'page-progress') {
+    renderOverviewStats();
+    renderProgressTable();
+  }
+}
+
+// ── 重置所有進度 ──
+function confirmResetAll() {
+  if(!confirm('確定要重置所有配貨進度和箱號記錄嗎？\n這會影響所有人！')) return;
+  Object.keys(distState).forEach(bc => { distState[bc].history = []; });
+  bnFound = new Set();
+  currentBC = null;
+  document.getElementById('distResult').innerHTML = '';
+  document.getElementById('distActionRow').style.display = 'none';
+  renderOverviewStats();
+  renderProgressTable();
+  syncSave();
+  setSyncStatus('ok','已重置');
+}
+
+// ── 攔截所有會改變狀態的操作，改變後自動推送 ──
+const _origOnScan = onScan;
+onScan = function(raw) {
+  _origOnScan(raw);
+  syncSave();
+};
+const _origUndoScan = undoScan;
+undoScan = function() {
+  _origUndoScan();
+  syncSave();
+};
+const _origResetCurrent = resetCurrent;
+resetCurrent = function() {
+  _origResetCurrent();
+  syncSave();
+};
+const _origBnDoSearch = bnDoSearch;
+bnDoSearch = function(val) {
+  _origBnDoSearch(val);
+  syncSave();
+};
+const _origBnReset = bnReset;
+bnReset = function() {
+  _origBnReset();
+  syncSave();
+};
+
+// ── 啟動定時同步 ──
+syncLoad();
+_syncTimer = setInterval(syncLoad, SYNC_INTERVAL);
+</script>
+</body>
+</html>
